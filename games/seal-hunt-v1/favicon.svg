@@ -5,12 +5,15 @@
       <stop offset="1" stop-color="#021a28"/>
     </linearGradient>
   </defs>
-  <rect width="128" height="128" fill="url(#g)"/>
-  <g transform="translate(64,64)">
-    <ellipse rx="40" ry="26" fill="#9fc5d9"/>
-    <ellipse cx="30" cy="-4" rx="18" ry="14" fill="#9fc5d9"/>
-    <ellipse cx="-30" cy="10" rx="16" ry="10" fill="#86b3c8"/>
-    <ellipse cx="-8" cy="18" rx="16" ry="10" fill="#86b3c8"/>
-    <circle cx="42" cy="-8" r="3" fill="#09202d"/>
+  <rect width="128" height="128" rx="16" fill="url(#g)"/>
+  <g transform="translate(64,68)">
+    <!-- chonky body -->
+    <ellipse rx="46" ry="36" fill="#bcd2da"/>
+    <!-- back flipper (small) -->
+    <ellipse cx="-34" cy="16" rx="14" ry="8" fill="#9bb8c4" transform="rotate(15 -34 16)"/>
+    <!-- front flipper (small) -->
+    <ellipse cx="8" cy="22" rx="14" ry="6.5" fill="#9bb8c4" transform="rotate(-18 8 22)"/>
+    <!-- black eye -->
+    <circle cx="40" cy="-10" r="4.5" fill="#0b1b23"/>
   </g>
 </svg>

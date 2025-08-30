@@ -1,5 +1,5 @@
 // Тюль-Охота — мобильная игра без зависимостей
-// v1: простой favicon, шаринг добавляет рекорд (best), overlay реагирует на ?s & ?b.
+// v1:
 
 (() => {
   const CANVAS = document.getElementById('game');
@@ -16,6 +16,7 @@
     btnAgain: document.getElementById('btnAgain'),
     btnPause: document.getElementById('btnPause'),
     btnShareEnd: document.getElementById('btnShareEnd'),
+    btnSound: document.getElementById('btnSound'),
   };
 
   const GAME_DURATION = 60_000;
@@ -24,7 +25,11 @@
   const SCORE = { now: 0, best: 0 };
   const POINTER = { x: 0, y: 0, active: false };
   const FISH = [];
-  const FX = { enabled: true };
+
+  // --- Звук с переключателем
+  const FX = {
+    enabled: (localStorage.getItem('seal_hunt_sound') ?? '1') === '1'
+  };
 
   let audioCtx = null;
   function pop() {
@@ -45,6 +50,9 @@
     } catch {}
   }
 
+  // --- Вспомогательные
+  const lerp = (a,b,t) => a + (b - a) * t;
+
   function makeSpots(seed = 1, count = 28) {
     let x = seed;
     function rnd() { x = (x * 1664525 + 1013904223) % 2**32; return (x/2**32); }
@@ -60,6 +68,7 @@
 
   const seal = {
     x: 0, y: 0, r: 30,
+    px: 0, py: 0,      // прошлые координаты (для свип-коллизии)
     vx: 0, vy: 0,
     maxSpeed: 240,
     accel: 900,
@@ -71,76 +80,36 @@
       CTX.translate(this.x, this.y);
       CTX.scale(this.facing, 1);
 
+      // soft shadow
       CTX.globalAlpha = 0.25;
       CTX.fillStyle = '#001018';
       CTX.beginPath();
-      CTX.ellipse(0, r*0.35, r*1.25, r*0.45, 0, 0, Math.PI*2);
+      CTX.ellipse(0, r*0.40, r*1.20, r*0.48, 0, 0, Math.PI*2);
       CTX.fill();
       CTX.globalAlpha = 1;
 
-      CTX.fillStyle = '#6e8e9b';
+      // CHONKY BODY — simple oval
+      CTX.fillStyle = '#bcd2da';
       CTX.beginPath();
-      CTX.moveTo(-r*1.3, 0);
-      CTX.quadraticCurveTo(0, -r*0.9, r*1.5, -r*0.1);
-      CTX.quadraticCurveTo(r*1.2, r*0.6, -r*1.1, r*0.4);
-      CTX.closePath();
+      CTX.ellipse(0, 0, r*1.35, r*1.05, 0, 0, Math.PI*2);
       CTX.fill();
 
-      CTX.fillStyle = '#b9d0d8';
+      // back flipper (small)
+      CTX.fillStyle = '#9bb8c4';
       CTX.beginPath();
-      CTX.moveTo(-r*1.2, r*0.2);
-      CTX.quadraticCurveTo(0, r*0.9, r*1.2, r*0.2);
-      CTX.quadraticCurveTo(r*0.6, 0, -r*1.2, 0.15*r);
-      CTX.closePath();
+      CTX.ellipse(-r*1.05, r*0.45, r*0.55, r*0.28, 0.4, 0, Math.PI*2);
       CTX.fill();
 
-      for (const s of this.spots) {
-        const sx = s.rx * r * 1.3;
-        const sy = (s.ry - 0.1) * r * 0.9;
-        CTX.globalAlpha = s.a;
-        CTX.fillStyle = '#455e69';
-        CTX.beginPath();
-        CTX.ellipse(sx, sy, s.r * r * 1.2, s.r * r * 0.9, (sx+sy)*0.1, 0, Math.PI*2);
-        CTX.fill();
-      }
-      CTX.globalAlpha = 1;
-
-      CTX.fillStyle = '#7c9aa6';
+      // front flipper (small)
       CTX.beginPath();
-      CTX.ellipse(r*1.15, -r*0.05, r*0.6, r*0.5, 0, 0, Math.PI*2);
+      CTX.ellipse(r*0.15, r*0.58, r*0.50, r*0.22, -0.35, 0, Math.PI*2);
       CTX.fill();
 
-      CTX.fillStyle = '#6e8e9b';
-      CTX.beginPath();
-      CTX.ellipse(-r*1.1, r*0.25, r*0.55, r*0.28, 0.5, 0, Math.PI*2);
-      CTX.fill();
-      CTX.beginPath();
-      CTX.ellipse(-r*0.4, r*0.6, r*0.6, r*0.28, -0.4, 0, Math.PI*2);
-      CTX.fill();
-
+      // black eye (minimal)
       CTX.fillStyle = '#0b1b23';
       CTX.beginPath();
-      CTX.arc(r*1.35, -r*0.15, r*0.11, 0, Math.PI*2);
+      CTX.arc(r*1.05, -r*0.22, r*0.12, 0, Math.PI*2);
       CTX.fill();
-      CTX.fillStyle = '#d9f1ff';
-      CTX.beginPath();
-      CTX.arc(r*1.39, -r*0.18, r*0.04, 0, Math.PI*2);
-      CTX.fill();
-
-      CTX.fillStyle = '#0b1b23';
-      CTX.beginPath();
-      CTX.ellipse(r*1.32, r*0.02, r*0.03, r*0.02, 0.2, 0, Math.PI*2);
-      CTX.ellipse(r*1.24, 0, r*0.03, r*0.02, -0.2, 0, Math.PI*2);
-      CTX.fill();
-
-      CTX.strokeStyle = 'rgba(9,32,45,0.75)';
-      CTX.lineWidth = 1.5;
-      CTX.beginPath();
-      for (let i=0;i<3;i++){
-        CTX.moveTo(r*1.25, r*(0.16+i*0.05));
-        CTX.quadraticCurveTo(r*1.6, r*(0.12+i*0.05), r*1.95, r*(0.16+i*0.05));
-      }
-      CTX.stroke();
 
       CTX.restore();
     }
@@ -156,7 +125,7 @@
       else if (edge === 1) { x = WORLD.w + 20; y = Math.random() * WORLD.h; vx = -speed; vy = (Math.random()-0.5)*speed; }
       else if (edge === 2) { x = Math.random() * WORLD.w; y = -20; vx = (Math.random()-0.5)*speed; vy = speed; }
       else { x = Math.random() * WORLD.w; y = WORLD.h + 20; vx = (Math.random()-0.5)*speed; vy = -speed; }
-      FISH.push({ x, y, vx, vy, r, t: 0 });
+      FISH.push({ x, y, px: x, py: y, vx, vy, r, t: 0 });
     }
   }
 
@@ -251,6 +220,23 @@
   });
   UI.btnShareEnd.addEventListener('click', shareScore);
 
+  // --- Переключатель звука
+  function refreshSoundButton() {
+    if (!UI.btnSound) return;
+    UI.btnSound.textContent = FX.enabled ? '🔊' : '🔈';
+    UI.btnSound.setAttribute('aria-pressed', String(!FX.enabled));
+    UI.btnSound.title = FX.enabled ? 'Звук: вкл' : 'Звук: выкл';
+  }
+  if (UI.btnSound) {
+    refreshSoundButton();
+    UI.btnSound.addEventListener('click', () => {
+      FX.enabled = !FX.enabled;
+      localStorage.setItem('seal_hunt_sound', FX.enabled ? '1' : '0');
+      refreshSoundButton();
+    });
+  }
+
+  // --- Счёт/приветствие
   SCORE.best = Number(localStorage.getItem('seal_hunt_best')||0);
   UI.best.textContent = SCORE.best;
 
@@ -261,8 +247,19 @@
     UI.overlay.hidden = false;
     UI.message.innerHTML = `Ваш друг(подруга) набрал(а) <b>${friendScore}</b> очков (рекорд: <b>${friendBest}</b>). Сможете больше?`;
     UI.btnShareEnd.hidden = true;
+    UI.btnAgain.textContent = 'Играть';
+  } else {
+    // Приветственный экран вместо «чёрного»
+    UI.overlay.hidden = false;
+    UI.message.innerHTML = 'Лови как можно больше 🐟 за <b>60 секунд</b>.<br>Управление: удерживайте палец/мышь — тюлень плывёт за касанием.';
+    UI.btnShareEnd.hidden = true;
+    UI.btnAgain.textContent = 'Играть';
   }
 
+  // Нарисуем фон сразу, чтобы не было пустого экрана
+  drawFrame(0);
+
+  // --- Игровой цикл
   let lastTime = 0;
   let timeLeft = GAME_DURATION;
   let spawnTimer = 0;
@@ -277,6 +274,7 @@
     spawnTimer = 0;
     FISH.length = 0;
     seal.x = WORLD.w * 0.3; seal.y = WORLD.h * 0.5;
+    seal.px = seal.x; seal.py = seal.y;
     seal.vx = seal.vy = 0;
     POINTER.active = false;
     lastTime = performance.now();
@@ -295,6 +293,7 @@
       UI.message.innerHTML = `Время вышло! Ваш счёт: <b>${SCORE.now}</b> 🐟 рекорд: <b>${SCORE.best}</b> 🏆`;
     }
     UI.btnShareEnd.hidden = false;
+    UI.btnAgain.textContent = 'Играть ещё';
   }
 
   function loop() {
@@ -322,6 +321,9 @@
       spawnTimer = 0.9 / targetRate;
     }
 
+    // --- Сохраняем предыдущую позицию тюленя для свип-коллизии
+    seal.px = seal.x; seal.py = seal.y;
+
     if (POINTER.active) {
       const dx = POINTER.x - seal.x;
       const dy = POINTER.y - seal.y;
@@ -344,20 +346,39 @@
     seal.x = Math.max(seal.r, Math.min(WORLD.w - seal.r, seal.x));
     seal.y = Math.max(seal.r, Math.min(WORLD.h - seal.r, seal.y));
 
+    // --- Рыба + коллизии
     for (let i = FISH.length - 1; i >= 0; i--) {
       const f = FISH[i];
+
+      // сохраним прошлую позицию рыбы
+      f.px = f.x; f.py = f.y;
+
       f.t += dt;
       f.x += f.vx * dt;
       f.y += f.vy * dt;
       f.vx += Math.sin(f.t * 6 + i) * 5 * dt;
       f.vy += Math.cos(f.t * 5 + i) * 5 * dt;
+
       if (f.x < -60 || f.x > WORLD.w + 60 || f.y < -60 || f.y > WORLD.h + 60) {
         FISH.splice(i, 1);
         continue;
       }
-      const dx = f.x - seal.x; const dy = f.y - seal.y;
-      const r = f.r + seal.r * 0.75;
-      if (dx*dx + dy*dy < r*r) {
+
+      // --- Свип-коллизия: проверяем расстояние в t=0, 0.5, 1
+      const eatR = f.r + seal.r * 0.90; // чуть "шире рта"
+      const eatR2 = eatR * eatR;
+
+      let hit = false;
+      for (const t of [0, 0.5, 1]) {
+        const sx = lerp(seal.px, seal.x, t);
+        const sy = lerp(seal.py, seal.y, t);
+        const fx = lerp(f.px, f.x, t);
+        const fy = lerp(f.py, f.y, t);
+        const dx = fx - sx, dy = fy - sy;
+        if (dx*dx + dy*dy < eatR2) { hit = true; break; }
+      }
+
+      if (hit) {
         FISH.splice(i, 1);
         SCORE.now++; UI.score.textContent = SCORE.now;
         pop();
