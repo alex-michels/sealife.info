@@ -76,6 +76,15 @@
     spots: makeSpots(7, 34),
     draw() {
       const r = this.r;
+
+      // time + swim intensity (0..1) from current speed
+      const t = performance.now() / 1000;
+      const swim = Math.min(1, Math.hypot(this.vx, this.vy) / (this.maxSpeed * 0.75));
+
+      // small angles for tail wag + front-flipper flap (radians)
+      const tailAng  = Math.sin(t * 6.5) * 0.22 * swim;   // tiny tail wag
+      const flapAng  = (-0.15) + Math.sin(t * 1.8) * 0.2 * swim; // front flipper flap
+
       CTX.save();
       CTX.translate(this.x, this.y);
       CTX.scale(this.facing, 1);
@@ -113,8 +122,11 @@
         return arr;
       })();
 
-      // ——— back flippers (tail) mid-left
+      // ——— back flippers mid-left
       // pale web with little dark fingertip marks
+      CTX.save();
+      CTX.translate(-r*0.0, 0);
+      CTX.rotate(tailAng);
       CTX.fillStyle = '#9bb8c4';
       CTX.beginPath();
       CTX.moveTo(-r*1.30, -r*0.3);
@@ -130,8 +142,12 @@
         CTX.ellipse(-r*1.65, yy, r*0.07, r*0.04, 0, 0, Math.PI*2);
         CTX.fill();
       }
+      CTX.restore();
 
       // ——— front flipper (single oval in the middle of body)
+      CTX.save();
+      CTX.translate(r*0.00, r*0.15);
+      CTX.rotate(flapAng);
       CTX.fillStyle = '#9bb8c4';
       CTX.beginPath();
       CTX.ellipse(r*0.00, r*0.15, r*0.60, r*0.30, -0.15, 0, Math.PI*2);
@@ -149,6 +165,7 @@
         CTX.ellipse(tipX, yy, r*0.075, r*0.045, -0.15, 0, Math.PI*2);
         CTX.fill();
       }
+      CTX.restore();
 
 
       // ——— eye (big black dot near front-right)
