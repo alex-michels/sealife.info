@@ -84,32 +84,93 @@
       CTX.globalAlpha = 0.25;
       CTX.fillStyle = '#001018';
       CTX.beginPath();
-      CTX.ellipse(0, r*0.40, r*1.20, r*0.48, 0, 0, Math.PI*2);
+      CTX.ellipse(0, r*0.40, r*1.22, r*0.50, 0, 0, Math.PI*2);
       CTX.fill();
       CTX.globalAlpha = 1;
 
-      // CHONKY BODY — simple oval
+      // ——— body: big chonky oval
       CTX.fillStyle = '#bcd2da';
       CTX.beginPath();
-      CTX.ellipse(0, 0, r*1.35, r*1.05, 0, 0, Math.PI*2);
+      CTX.ellipse(0, 0, r*1.45, r*1.10, 0, 0, Math.PI*2);
       CTX.fill();
 
-      // back flipper (small)
+      // ——— subtle spotted pattern (few large soft spots)
+      this._spots ||= (() => {
+        let s = 17;
+        const rnd = () => ((s = (s*1664525 + 1013904223) >>> 0) / 4294967296);
+        const arr = [];
+        const count = 8;                 // a few big spots like on the sketch
+        for (let i=0;i<count;i++){
+          arr.push({
+            x: (rnd()*1.4 - 0.7) * r*1.05,
+            y: (rnd()*1.2 - 0.6) * r*0.85,
+            rx: (0.28 + rnd()*0.12) * r,
+            ry: (0.18 + rnd()*0.10) * r,
+            rot: rnd()*Math.PI*2,
+            a: 0.20 + rnd()*0.15
+          });
+        }
+        return arr;
+      })();
+
+      // ——— back flippers (tail) mid-left
+      // pale web with little dark fingertip marks
       CTX.fillStyle = '#9bb8c4';
       CTX.beginPath();
-      CTX.ellipse(-r*1.05, r*0.45, r*0.55, r*0.28, 0.4, 0, Math.PI*2);
+      CTX.moveTo(-r*1.30, -r*0.3);
+      CTX.quadraticCurveTo(-r*1.95, -r*0.60, -r*1.70, -r*0.05);
+      CTX.quadraticCurveTo(-r*1.85,  r*0.60, -r*1.30,  r*0.2);
+      CTX.closePath();
       CTX.fill();
+      // dark “digits”
+      CTX.fillStyle = '#0b1b23';
+      for (let i=0;i<4;i++){
+        const yy = -r*0.22 + i*(r*0.15);
+        CTX.beginPath();
+        CTX.ellipse(-r*1.65, yy, r*0.07, r*0.04, 0, 0, Math.PI*2);
+        CTX.fill();
+      }
 
-      // front flipper (small)
+      // ——— front flipper (single oval in the middle of body)
+      CTX.fillStyle = '#9bb8c4';
       CTX.beginPath();
-      CTX.ellipse(r*0.15, r*0.58, r*0.50, r*0.22, -0.35, 0, Math.PI*2);
+      CTX.ellipse(r*0.00, r*0.15, r*0.60, r*0.30, -0.15, 0, Math.PI*2);
       CTX.fill();
 
-      // black eye (minimal)
+      // creases like on the back flippers — tiny dark ovals along the distal edge
+      CTX.fillStyle = '#0b1b23';
+      const tipX = r*-0.5;       // near the flipper tip
+      const tipY = r*0.05;
+      const stepY = r*0.09;      // spacing between “digits”
+      for (let i = 0; i < 4; i++) {
+        const yy = tipY + i*stepY;
+        CTX.beginPath();
+        // rotate slightly to match flipper tilt (-0.15 rad)
+        CTX.ellipse(tipX, yy, r*0.075, r*0.045, -0.15, 0, Math.PI*2);
+        CTX.fill();
+      }
+
+
+      // ——— eye (big black dot near front-right)
       CTX.fillStyle = '#0b1b23';
       CTX.beginPath();
-      CTX.arc(r*1.05, -r*0.22, r*0.12, 0, Math.PI*2);
+      CTX.arc(r*1.18, -r*0.10, r*0.16, 0, Math.PI*2);
       CTX.fill();
+
+      // ——— tiny nose + vibrissae at front
+      CTX.beginPath();
+      CTX.arc(r*1.22, r*0.02, r*0.05, 0, Math.PI*2);
+      CTX.fill();
+      CTX.strokeStyle = 'rgba(22, 37, 46, 0.85)';
+      CTX.lineWidth = 1;
+      CTX.lineCap = 'round';
+      for (let i=0;i<3;i++){
+        const yy = r*(0.2 + i*0.085);
+        CTX.beginPath();
+        CTX.moveTo(r*1.18, yy);
+        CTX.quadraticCurveTo(r*1.2, yy - r*0.06, r*1.65, yy - r*0.01);
+        CTX.stroke();
+      }
 
       CTX.restore();
     }
