@@ -209,23 +209,41 @@
 
   function drawFish(f) {
     const { x, y, r } = f;
+    const dir = (f.dir || (f.vx >= 0 ? 1 : -1)) >= 0 ? 1 : -1;
+
     CTX.save();
     CTX.translate(x, y);
+    CTX.scale(dir, 1); // зеркалим, если плывёт влево
+
+    // body
     CTX.fillStyle = '#ffd166';
     CTX.beginPath();
     CTX.ellipse(0, 0, r*0.9, r*0.6, 0, 0, Math.PI*2);
     CTX.fill();
+
+    // tail
     CTX.fillStyle = '#f9c74f';
     CTX.beginPath();
     CTX.moveTo(-r*0.9, 0);
     CTX.lineTo(-r*1.4, -r*0.6);
-    CTX.lineTo(-r*1.4, r*0.6);
+    CTX.lineTo(-r*1.4,  r*0.6);
     CTX.closePath();
     CTX.fill();
+
+    // eye
     CTX.fillStyle = '#09202d';
     CTX.beginPath();
     CTX.arc(r*0.5, -r*0.1, r*0.1, 0, Math.PI*2);
     CTX.fill();
+
+    // tiny mouth
+    CTX.strokeStyle = '#09202d';
+    CTX.lineWidth = 1.2;
+    CTX.beginPath();
+    CTX.moveTo(r*0.65, r*0.05);
+    CTX.quadraticCurveTo(r*0.72, r*0.06, r*0.78, r*0.04);
+    CTX.stroke();
+
     CTX.restore();
   }
 
@@ -436,6 +454,7 @@
       f.y += f.vy * dt;
       f.vx += Math.sin(f.t * 6 + i) * 5 * dt;
       f.vy += Math.cos(f.t * 5 + i) * 5 * dt;
+      f.dir = Math.sign(f.vx) || f.dir;
 
       if (f.x < -60 || f.x > WORLD.w + 60 || f.y < -60 || f.y > WORLD.h + 60) {
         FISH.splice(i, 1);
