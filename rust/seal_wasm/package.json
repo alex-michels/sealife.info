@@ -1,0 +1,10 @@
+{
+"name": "seal-wasm-build",
+"private": true,
+"scripts": {
+"build:wasm": "wasm-pack build --release --target web --out-dir ../../apps/web/src/wasm/seal_wasm"
+},
+"devDependencies": {
+"wasm-pack": "^0.12.1"
+}
+}

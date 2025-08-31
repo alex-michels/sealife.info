@@ -1,0 +1,6 @@
+[workspace]
+members = [
+"rust/seal_domain",
+"rust/seal_wasm"
+]
+resolver = "2"

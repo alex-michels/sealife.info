@@ -1,0 +1,12 @@
+---
+const { lang = 'en' } = Astro.props;
+const base = lang === 'ru' ? '/ru' : '/en';
+---
+<nav style="display:flex;gap:1rem;padding:1rem;border-bottom:1px solid #eee;align-items:center;">
+<a href={base + '/'}>Home</a>
+<a href={base + '/seals/'}>Seals</a>
+<a href={base + '/sealrescue/'}>Seal Rescue</a>
+<a href={base + '/games/'}>Games</a>
+<span style="margin-left:auto"></span>
+<a href={base === '/ru' ? '/en/' : '/ru/'} aria-label="switch language">{lang === 'ru' ? 'EN' : 'RU'}</a>
+</nav>

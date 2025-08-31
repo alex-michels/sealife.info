@@ -1,0 +1,15 @@
+---
+const { lang = 'en', title = 'sealife.info' } = Astro.props;
+---
+<!doctype html>
+<html lang={lang}>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>{title}</title>
+<link rel="icon" href="/favicon.svg" />
+</head>
+<body style="font-family: system-ui, -apple-system, Segoe UI, Roboto; margin:0;">
+<slot />
+</body>
+</html>

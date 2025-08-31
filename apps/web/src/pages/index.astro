@@ -1,0 +1,6 @@
+---
+// Redirect users based on Accept-Language (very simple SSR edge logic)
+const accept = Astro.request.headers.get('accept-language') || '';
+const isRU = /\bru\b/i.test(accept);
+Astro.redirect(isRU ? '/ru/' : '/en/');
+---

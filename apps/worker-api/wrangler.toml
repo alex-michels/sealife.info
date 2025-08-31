@@ -1,0 +1,14 @@
+name = "sealife-api"
+main = "src/index.ts"
+compatibility_date = "2024-10-01"
+
+
+[observability]
+enabled = true
+
+
+# Bind D1 later, example:
+#[[d1_databases]]
+#binding = "DB"
+#database_name = "sealife-d1"
+#database_id = "REPLACE_ME"

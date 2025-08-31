@@ -1,0 +1,14 @@
+---
+import Base from "../../layouts/Base.astro";
+import Nav from "../../components/Nav.astro";
+const lang = Astro.url.pathname.startsWith('/ru') ? 'ru' : 'en';
+---
+<Base lang={lang} title={lang === 'ru' ? 'Игры' : 'Games'}>
+<Nav lang={lang} />
+<main style="padding:1.5rem; max-width: 960px; margin: 0 auto;">
+<h1>{lang === 'ru' ? 'Игры' : 'Games'}</h1>
+<ul>
+<li><a href="/games/seal-hunt-v1/" rel="external">Seal Hunt v1</a> — {lang === 'ru' ? 'текущая JS-версия' : 'current JS version'}.</li>
+</ul>
+</main>
+</Base>

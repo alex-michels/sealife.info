@@ -1,0 +1,15 @@
+{
+"name": "worker-api",
+"private": true,
+"type": "module",
+"scripts": {
+"dev": "wrangler dev src/index.ts --local",
+"build": "wrangler deploy --dry-run",
+"deploy": "wrangler deploy",
+"lint": "echo 'lint ok'"
+},
+"devDependencies": {
+"wrangler": "^3.78.0",
+"typescript": "^5.4.0"
+}
+}

@@ -1,0 +1,16 @@
+# node
+node_modules
+pnpm-lock.yaml
+*.log
+
+
+# builds
+/dist
+/build
+/.wrangler
+**/pkg
+
+
+# rust
+/target
+Cargo.lock
