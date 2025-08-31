@@ -9,7 +9,7 @@
 "lint": "echo 'lint ok'"
 },
 "devDependencies": {
-"wrangler": "^3.78.0",
-"typescript": "^5.4.0"
+"wrangler": "^4.33.1",
+"typescript": "^5.9.2"
 }
 }
