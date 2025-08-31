@@ -43,7 +43,7 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: sealife-web
           directory: apps/web/dist
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          #gitHubToken: ${{ secrets.GITHUB_TOKEN }}
 
   deploy-api:
     needs: build
@@ -58,7 +58,7 @@ jobs:
       - run: pnpm install --frozen-lockfile=false
       - name: Deploy Worker API
         working-directory: apps/worker-api
-        run: pnpm deploy
+        run: pnpm run deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -84,4 +84,4 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: seal-hunt-v1
           directory: apps/games/seal-hunt-v1/dist
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          #gitHubToken: ${{ secrets.GITHUB_TOKEN }}
