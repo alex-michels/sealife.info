@@ -1,6 +1,6 @@
 name = "sealife-api"
 main = "src/index.ts"
-compatibility_date = "2024-10-01"
+compatibility_date = "2025-08-31"
 
 
 [observability]
