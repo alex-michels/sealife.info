@@ -12,9 +12,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
-        with: { version: 10 }
+        with: { version: 10.15.0 }
       - uses: actions/setup-node@v4
-        with: { node-version: 22 }
+        with: { node-version: 22.19.0 }
       - name: Install deps
         run: pnpm install --frozen-lockfile=false
       - name: Build WASM (browser)
@@ -29,9 +29,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
-        with: { version: 10 }
+        with: { version: 10.15.0 }
       - uses: actions/setup-node@v4
-        with: { node-version: 22 }
+        with: { node-version: 22.19.0 }
       - run: pnpm install --frozen-lockfile=false
       - name: Build web
         working-directory: apps/web
@@ -52,9 +52,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
-        with: { version: 10 }
+        with: { version: 10.15.0 }
       - uses: actions/setup-node@v4
-        with: { node-version: 22 }
+        with: { node-version: 22.19.0 }
       - run: pnpm install --frozen-lockfile=false
       - name: Deploy Worker API
         working-directory: apps/worker-api
@@ -70,9 +70,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
-        with: { version: 10 }
+        with: { version: 10.15.0 }
       - uses: actions/setup-node@v4
-        with: { node-version: 22 }
+        with: { node-version: 22.19.0 }
       - run: pnpm install --frozen-lockfile=false
       - name: Build static game
         working-directory: apps/games/seal-hunt-v1
