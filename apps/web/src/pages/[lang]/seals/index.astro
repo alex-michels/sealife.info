@@ -1,0 +1,19 @@
+---
+export const prerender = true;
+export function getStaticPaths() {
+  return [{ params: { lang: 'en' } }, { params: { lang: 'ru' } }];
+}
+import Base from "../../../layouts/Base.astro";
+import Nav from "../../../components/Nav.astro";
+const lang = Astro.params.lang === 'ru' ? 'ru' : 'en';
+---
+<Base lang={lang} title={lang === 'ru' ? 'О тюленях' : 'About Seals'}>
+  <Nav />
+  <main id="main" style="padding:1.5rem; max-width: 960px; margin: 0 auto;">
+    <h1>{lang === 'ru' ? 'О тюленях' : 'About Seals'}</h1>
+    <ul>
+      <li>{lang === 'ru' ? 'Фоциды (настоящие тюлени)' : 'Phocidae (true seals)'} — {lang === 'ru' ? 'например, кольчатая нерпа' : 'e.g., ringed seal'}.</li>
+      <li>{lang === 'ru' ? 'Оттарии (ушастые тюлени)' : 'Otariidae (eared seals)'} — {lang === 'ru' ? 'морские львы и морские котики' : 'sea lions and fur seals'}.</li>
+    </ul>
+  </main>
+</Base>

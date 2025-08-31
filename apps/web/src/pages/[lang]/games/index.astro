@@ -1,0 +1,19 @@
+---
+export const prerender = true;
+export function getStaticPaths() {
+  return [{ params: { lang: 'en' } }, { params: { lang: 'ru' } }];
+}
+import Base from "../../../layouts/Base.astro";
+import Nav from "../../../components/Nav.astro";
+const lang = Astro.params.lang === 'ru' ? 'ru' : 'en';
+const base = `/${lang}`;
+---
+<Base lang={lang} title={lang === 'ru' ? 'Игры' : 'Games'}>
+  <Nav />
+  <main id="main" style="padding:1.5rem; max-width: 960px; margin: 0 auto;">
+    <h1>{lang === 'ru' ? 'Игры' : 'Games'}</h1>
+    <ul>
+      <li><a href={"/games/seal-hunt-v1/index.html"}>Seal Hunt v1</a> — {lang === 'ru' ? 'текущая JS-версия' : 'current JS version'}.</li>
+    </ul>
+  </main>
+</Base>

@@ -1,15 +1,20 @@
 {
-"name": "web",
-"private": true,
-"type": "module",
-"scripts": {
-"dev": "astro dev",
-"build": "astro build",
-"preview": "astro preview",
-"lint": "echo 'lint ok'"
-},
-"dependencies": {
-"astro": "^5.13.5",
-"@astrojs/cloudflare": "^12.6.7"
-}
+  "name": "web",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "copy:game": "pnpm -C ../games/seal-hunt-v1 build && rimraf public/games/seal-hunt-v1 && cpy ../games/seal-hunt-v1/dist/** public/games/seal-hunt-v1 --cwd .",
+    "dev": "pnpm run copy:game && astro dev",
+    "build": "pnpm run copy:game && astro build",
+    "preview": "astro preview",
+    "lint": "echo 'lint ok'"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "^12.6.7",
+    "astro": "^5.13.5"
+  },
+  "devDependencies": {
+    "cpy-cli": "^6.0.0",
+    "rimraf": "^6.0.1"
+  }
 }

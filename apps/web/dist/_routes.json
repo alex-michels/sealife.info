@@ -5,6 +5,17 @@
   ],
   "exclude": [
     "/_astro/*",
-    "/favicon.svg"
+    "/favicon.svg",
+    "/games/seal-hunt-v1/favicon.svg",
+    "/games/seal-hunt-v1/game.js",
+    "/games/seal-hunt-v1/index.html",
+    "/games/seal-hunt-v1/manifest.webmanifest",
+    "/games/seal-hunt-v1/package.json",
+    "/games/seal-hunt-v1/README.md",
+    "/games/seal-hunt-v1/style.css",
+    "/games/seal-hunt-v1/sw.js",
+    "/games/seal-hunt-v1/.turbo/turbo-build.log",
+    "/en/*",
+    "/ru/*"
   ]
 }

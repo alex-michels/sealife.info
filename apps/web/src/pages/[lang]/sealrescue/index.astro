@@ -1,0 +1,16 @@
+---
+export const prerender = true;
+export function getStaticPaths() {
+  return [{ params: { lang: 'en' } }, { params: { lang: 'ru' } }];
+}
+import Base from "../../../layouts/Base.astro";
+import Nav from "../../../components/Nav.astro";
+const lang = Astro.params.lang === 'ru' ? 'ru' : 'en';
+---
+<Base lang={lang} title={lang === 'ru' ? 'Центры спасения тюленей' : 'Seal Rescue Centers'}>
+  <Nav />
+  <main id="main" style="padding:1.5rem; max-width: 960px; margin: 0 auto;">
+    <h1>{lang === 'ru' ? 'Центры спасения тюленей' : 'Seal Rescue Centers'}</h1>
+    <p>{lang === 'ru' ? 'Фильтры и карта появятся позже.' : 'Filters and map coming soon.'}</p>
+  </main>
+</Base>

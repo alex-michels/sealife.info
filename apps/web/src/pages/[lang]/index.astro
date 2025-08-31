@@ -1,0 +1,23 @@
+---
+export const prerender = true;
+export function getStaticPaths() {
+  return [{ params: { lang: 'en' } }, { params: { lang: 'ru' } }];
+}
+import Base from "../../layouts/Base.astro";
+import Nav from "../../components/Nav.astro";
+
+const lang = Astro.params.lang === 'ru' ? 'ru' : 'en';
+---
+<Base lang={lang} title={lang === 'ru' ? 'sealife.info – Тюлени, спасение и игры' : 'sealife.info – Seals, rescue & games'}>
+  <Nav />
+  <main id="main" style="padding:1.5rem; max-width: 960px; margin: 0 auto;">
+    <h1>sealife.info</h1>
+    <p>{lang === 'ru'
+      ? 'Цель: рассказывать о настоящих тюленях, собирать карту центров спасения и делать лёгкие мобильные игры.'
+      : 'Purpose: celebrate real seals, map rescue centers, and host light, mobile-first games.'}</p>
+    <section>
+      <h2>{lang === 'ru' ? 'Галерея (заглушка)' : 'Gallery (placeholder)'}</h2>
+      <p>{lang === 'ru' ? 'Позже подключим R2; пока — статические изображения.' : 'Hook up R2 later; for now, static images here.'}</p>
+    </section>
+  </main>
+</Base>

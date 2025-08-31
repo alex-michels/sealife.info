@@ -6,8 +6,8 @@ const $$Astro = createAstro();
 const $$Index = createComponent(($$result, $$props, $$slots) => {
   const Astro2 = $$result.createAstro($$Astro, $$props, $$slots);
   Astro2.self = $$Index;
-  const accept = Astro2.request.headers.get("accept-language") || "";
-  const isRU = /\bru\b/i.test(accept);
+  const accept = (Astro2.request.headers.get("accept-language") || "").toLowerCase();
+  const isRU = /(?:^|[,; ])ru\b/.test(accept);
   Astro2.redirect(isRU ? "/ru/" : "/en/");
   return renderTemplate``;
 }, "C:/Users/busca/Documents/Projects/seallife.info/apps/web/src/pages/index.astro", void 0);

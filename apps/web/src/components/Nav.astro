@@ -1,12 +1,19 @@
 ---
-const { lang = 'en' } = Astro.props;
-const base = lang === 'ru' ? '/ru' : '/en';
+const lang = (Astro.props.lang ?? Astro.params.lang ?? 'en') as 'en' | 'ru';
+const base = `/${lang}`;
+const path = Astro.url.pathname;
+
+const L = lang === 'ru'
+  ? { home: 'Главная', seals: 'Тюлени', rescue: 'Центры спасения', games: 'Игры', switch: 'EN' }
+  : { home: 'Home',    seals: 'Seals',  rescue: 'Seal Rescue',        games: 'Games', switch: 'RU' };
+
+const isActive = (href: string) => path === href || (path.startsWith(href) && href !== base + '/');
 ---
 <nav style="display:flex;gap:1rem;padding:1rem;border-bottom:1px solid #eee;align-items:center;">
-<a href={base + '/'}>Home</a>
-<a href={base + '/seals/'}>Seals</a>
-<a href={base + '/sealrescue/'}>Seal Rescue</a>
-<a href={base + '/games/'}>Games</a>
-<span style="margin-left:auto"></span>
-<a href={base === '/ru' ? '/en/' : '/ru/'} aria-label="switch language">{lang === 'ru' ? 'EN' : 'RU'}</a>
+  <a href={base + '/'} aria-current={isActive(base + '/') ? 'page' : undefined}>{L.home}</a>
+  <a href={base + '/seals/'} aria-current={isActive(base + '/seals/') ? 'page' : undefined}>{L.seals}</a>
+  <a href={base + '/sealrescue/'} aria-current={isActive(base + '/sealrescue/') ? 'page' : undefined}>{L.rescue}</a>
+  <a href={base + '/games/'} aria-current={isActive(base + '/games/') ? 'page' : undefined}>{L.games}</a>
+  <span style="margin-left:auto"></span>
+  <a href={lang === 'ru' ? '/en/' : '/ru/'} aria-label={lang === 'ru' ? 'Переключить язык' : 'Switch language'}>{L.switch}</a>
 </nav>
