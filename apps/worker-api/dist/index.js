@@ -1,0 +1,13 @@
+export default {
+    async fetch(request, env, ctx) {
+        const url = new URL(request.url);
+        if (url.pathname === "/api/health") {
+            return Response.json({ ok: true, ts: Date.now() });
+        }
+        if (url.pathname === "/api/echo" && request.method === "POST") {
+            const body = await request.json().catch(() => ({}));
+            return Response.json({ youSent: body });
+        }
+        return new Response("sealife-api: try /api/health", { status: 404 });
+    }
+};
