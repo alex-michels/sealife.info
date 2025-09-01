@@ -29,20 +29,51 @@ const STATE = { running:false, over:false, paused:false };
 const SCORE = { now:0, best:0 };
 const POINTER = { x:0, y:0, active:false };
 
-// ——— Audio (gentle pop)
+// ——— Audio (gentle pop) — warm up on first user gesture to avoid hitch
 const FX = { enabled: (localStorage.getItem('seal_hunt_sound') ?? '1') === '1' };
-let audioCtx=null;
-function pop(){
-  if(!FX.enabled) return;
-  try{
-    if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-    const ctx=audioCtx,o=ctx.createOscillator(), g=ctx.createGain();
-    o.type='sine'; o.frequency.value=660+Math.random()*60; g.gain.value=0.12;
-    o.connect(g); g.connect(ctx.destination); o.start();
-    o.frequency.exponentialRampToValueAtTime(120, ctx.currentTime+0.12);
-    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+0.12);
-    o.stop(ctx.currentTime+0.13);
-  }catch{}
+let audioCtx = null;
+let audioReady = false;
+
+async function initAudio() {
+  if (audioReady || !FX.enabled) return;
+  try {
+    if (!audioCtx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      audioCtx = new AC({ latencyHint: 'interactive' });
+    }
+    // Some browsers need an explicit resume() within a gesture
+    if (audioCtx.state === 'suspended') await audioCtx.resume();
+
+    // Warm up: start/stop a nearly silent node so the graph is “hot”
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    g.gain.value = 0.00001;      // effectively silent
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start();
+    o.stop(audioCtx.currentTime + 0.05);
+
+    audioReady = true;
+  } catch {}
+}
+
+function pop() {
+  if (!FX.enabled) return;
+  // If not warmed yet, do it asynchronously and fire the pop next tick
+  if (!audioReady) { initAudio().then(() => setTimeout(pop, 0)); return; }
+  try {
+    const ctx = audioCtx;
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = 'sine';
+    o.frequency.value = 660 + Math.random() * 60;
+    g.gain.value = 0.12;
+    o.connect(g); g.connect(ctx.destination);
+    const t0 = ctx.currentTime;
+    o.start(t0);
+    o.frequency.exponentialRampToValueAtTime(120, t0 + 0.12);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.12);
+    o.stop(t0 + 0.13);
+  } catch {}
 }
 
 // ——— Helpers
@@ -85,6 +116,10 @@ attachPointer(CANVAS,
   p=>{ POINTER.active=true; POINTER.x=p.x; POINTER.y=p.y; },
   ()=>{ POINTER.active=false; }
 );
+let didWarmAudio = false;
+const warmOnce = () => { if (!didWarmAudio) { didWarmAudio = true; initAudio(); } };
+CANVAS.addEventListener('touchstart', warmOnce, { passive: true });
+CANVAS.addEventListener('mousedown',  warmOnce);
 
 // ——— UI
 function refreshSoundButton(){
@@ -99,6 +134,7 @@ if(UI.btnSound){
     FX.enabled = !FX.enabled;
     localStorage.setItem('seal_hunt_sound', FX.enabled?'1':'0');
     refreshSoundButton();
+    if (FX.enabled) initAudio();   // warm immediately when turning sound back on
   });
 }
 
@@ -129,6 +165,9 @@ UI.btnPause.addEventListener('click', ()=>{
   loop();
 });
 UI.btnShareEnd.addEventListener('click', shareScore);
+UI.btnStart.addEventListener('click', () => { initAudio(); startGame(); });
+UI.btnAgain.addEventListener('click', () => { initAudio(); startGame(); });
+
 
 // ——— Game loop state
 let lastTime=0, timeLeft=GAME_DURATION, spawnTimer=0;
