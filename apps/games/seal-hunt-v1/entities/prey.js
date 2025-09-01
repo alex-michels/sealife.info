@@ -12,16 +12,18 @@ const WIGGLE = {
   rotFreq: 5.0,       // Hz-equivalent (multiplied by 2π inside)
   scaleAmp: 0.04,     // y-scale breathing effect
 };
-const ESCAPE = {
-  threatK: 6.0,       // threat radius ≈ seal.r * threatK (soft, feels right)
-  burstImpulse: 160,  // instantaneous dv (px/s) on trigger (away from seal)
-  maxBoost: 1.6,      // cap: up to 1.6× normal fish max speed during escape
-  fleeHold: 0.22,     // seconds we consider the fish "in flee mode"
-  restAfter: 2,     // minimum cooldown until next flee
-  steer: 280,         // while fleeing, extra away-from-seal steering (px/s^2)
-  dragHi: 0.985,      // stronger drag during/after burst (decays the boost)
-  dragLo: 0.998,      // normal gentle drag baseline (keeps speeds calm)
+// defaults (used only if BAL.escape not set yet)
+const DEFAULT_ESCAPE = {
+  threatK: 6.0,
+  burstImpulse: 160,
+  maxBoost: 1.6,
+  fleeHold: 0.22,
+  restAfter: 1.6,
+  steer: 280,
+  dragHi: 0.985,
+  dragLo: 0.998,
 };
+const ESC = () => (BAL.escape || DEFAULT_ESCAPE);
 
 // -------------------------------------------------------
 // species catalog (shape/color/size/behavior)
@@ -206,6 +208,7 @@ export function spawnPrey(world, n=1){
 
 export function updatePrey(dt, seal, world, eatCb){
   const now = performance.now()/1000;
+  const E = ESC();
 
   for(let i=PREY.length-1;i>=0;i--){
     const f = PREY[i];
@@ -217,7 +220,7 @@ export function updatePrey(dt, seal, world, eatCb){
     // ——— distance to seal
     const dx = f.x - seal.x, dy = f.y - seal.y;
     const d2 = dx*dx + dy*dy;
-    const threatR = (seal.r * ESCAPE.threatK) + f.r*1.4;
+    const threatR = (seal.r * E.threatK) + f.r*1.4;
     const threat2 = threatR*threatR;
 
     // cooldowns
@@ -229,15 +232,15 @@ export function updatePrey(dt, seal, world, eatCb){
       const d = Math.max(1, Math.sqrt(d2));
       const nx = dx / d, ny = dy / d;         // away from seal
       // impulse (adds to current velocity)
-      f.vx += nx * ESCAPE.burstImpulse;
-      f.vy += ny * ESCAPE.burstImpulse;
+      f.vx += nx * E.burstImpulse;
+      f.vy += ny * E.burstImpulse;
 
       // face away immediately (so draw scale flip feels right)
       f.dir = Math.sign(f.vx) || f.dir;
 
       // timers
-      f.fleeT  = ESCAPE.fleeHold;
-      f.restT  = ESCAPE.restAfter;
+      f.fleeT  = E.fleeHold;
+      f.restT  = E.restAfter;
 
       // small tail “kick” visual for ~0.2 s
       f.tailKick = 1.0;
@@ -246,9 +249,9 @@ export function updatePrey(dt, seal, world, eatCb){
     // ——— extra steering away while fleeing (gentle)
     if (f.fleeT > 0) {
       const d = Math.max(1, Math.sqrt(d2));
-      const ax = ESCAPE.steer * (dx / d);
-      const ay = ESCAPE.steer * (dy / d);
-      f.vx += ax * dt; 
+      const ax = E.steer * (dx / d);
+      const ay = E.steer * (dy / d);
+      f.vx += ax * dt;
       f.vy += ay * dt;
     }
 
@@ -256,11 +259,11 @@ export function updatePrey(dt, seal, world, eatCb){
     f.sp.wiggle(f,dt,i);
 
     // speed control: gentle drag always; stronger during escape
-    const drag = f.fleeT > 0 ? ESCAPE.dragHi : ESCAPE.dragLo;
+    const drag = f.fleeT > 0 ? E.dragHi : E.dragLo;
     f.vx *= drag; f.vy *= drag;
 
     // soft cap during boost
-    const vmax = BAL.fishSpeedMax * (f.fleeT > 0 ? ESCAPE.maxBoost : 1.0);
+    const vmax = BAL.fishSpeedMax * (f.fleeT > 0 ? E.maxBoost : 1.0);
     const sp = Math.hypot(f.vx, f.vy);
     if (sp > vmax) { const k = vmax / sp; f.vx *= k; f.vy *= k; }
 

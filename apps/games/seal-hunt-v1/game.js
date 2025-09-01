@@ -255,7 +255,7 @@ function update(dt){
     // Радиусы прибытия:
     //  - stopR: «магнитная зона» у цели — тут полностью гасим скорость
     //  - slowR: зона замедления — скорость уменьшается пропорционально расстоянию
-    const stopR = Math.max(14, seal.r * 0.5);
+    const stopR = Math.max(16, seal.r * (0.55 + Math.min(0.1, (1.0 - Math.min(1, BAL.diag / BASE.diag)) * 0.25)));
     const slowR = Math.max(stopR + 60, Math.min(BAL.diag * 0.13, 180));
 
     // Желаемая скорость по направлению к цели с плавным падением в slowR
