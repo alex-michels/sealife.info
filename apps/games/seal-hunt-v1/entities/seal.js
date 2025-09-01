@@ -5,7 +5,7 @@ export function makeSeal(makeSpots) {
     px:0, py:0,
     vx:0, vy:0,
     maxSpeed:200,
-    accel:600,
+    accel:900,
     facing:1,
     _spots:null,
     spots: makeSpots(7,34),
@@ -14,8 +14,8 @@ export function makeSeal(makeSpots) {
       const r=this.r;
       const t = performance.now()/1000;
       const swim = Math.min(1, Math.hypot(this.vx,this.vy)/(this.maxSpeed*0.5));
-      const tailAng = Math.sin(t*6.5)*0.22*swim;
-      const flapAng = (-0.15) + Math.sin(t*2.8)*0.20*swim;
+      const tailAng = Math.sin(t*7)*0.22*swim;
+      const flapAng = (-0.15) + Math.sin(t*3)*0.20*swim;
 
       ctx.save();
       ctx.translate(this.x,this.y);

@@ -9,10 +9,10 @@ export const BAL = {
   fishSpeedMax: 90,
 
   sealSpeed: 200,
-  sealAccel: 600,
+  sealAccel: 900,
 
   fishSizeK: 1,
-  maxPreyCap: 20
+  maxPreyCap: 24
 };
 
 export function recomputeBalance(worldW, worldH) {
@@ -22,7 +22,7 @@ export function recomputeBalance(worldW, worldH) {
 
   // Seal: keep time-to-cross similar across screens
   BAL.sealSpeed = 200 * diagK;
-  BAL.sealAccel = 600 * diagK;
+  BAL.sealAccel = 900 * diagK;
 
   // Fish speeds: gentle band, scaled but clamped (no eye-strain flashes)
   const sMin = 60 * diagK, sMax = 90 * diagK;
