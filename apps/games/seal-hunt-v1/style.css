@@ -14,3 +14,15 @@ button:active{transform:translateY(1px)}
 @media (max-width:480px){#hud .left span{margin-right:.6rem}button{padding:.5rem .7rem;font-size:0.95rem}}
 @media (prefers-contrast:more){button{outline:2px solid #fff}}
 @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+
+/* лёгкая тень у HUD, чтобы читабельнее на светлых лучах */
+#hud{ box-shadow: 0 2px 12px rgba(0,0,0,.15); }
+
+/* нежные подсказки на кнопках при фокусе */
+button:focus-visible{ outline:3px solid rgba(255,255,255,.8); outline-offset:2px; }
+
+/* если у пользователя reduce motion — отключаем blur и анимации UI */
+@media (prefers-reduced-motion: reduce){
+  #hud{ backdrop-filter:none }
+  *{ animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; }
+}
