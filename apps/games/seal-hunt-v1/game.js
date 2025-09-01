@@ -5,10 +5,16 @@ import { initScenery, drawBackground } from './render/scenery.js';
 import { PREY, spawnPrey, updatePrey, drawPrey } from './entities/prey.js';
 import { makeSeal } from './entities/seal.js';
 
+const { sin, cos, hypot, min, max, PI } = Math;
+
+// Reusable sweep samples (avoid recreating [0,0.5,1] each frame in prey.js)
+export const SWEEP_T = [0, 0.5, 1];
+
 // ——— DOM/Canvas
 const CANVAS = document.getElementById('game');
 const CTX = CANVAS.getContext('2d', { alpha:false });
 const DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+const PREFERS_REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)');
 
 const UI = {
   time: document.getElementById('time'),
@@ -107,7 +113,13 @@ function resize(){
   initScenery(WORLD, CTX);
 }
 
-window.addEventListener('resize', resize, {passive:true});
+let resizePend = false;
+window.addEventListener('resize', () => {
+  if (resizePend) return;
+  resizePend = true;
+  requestAnimationFrame(() => { resizePend = false; resize(); });
+}, { passive: true });
+
 resize();
 
 // ——— Input
@@ -243,7 +255,7 @@ function update(dt){
     // Радиусы прибытия:
     //  - stopR: «магнитная зона» у цели — тут полностью гасим скорость
     //  - slowR: зона замедления — скорость уменьшается пропорционально расстоянию
-    const stopR = Math.max(14, seal.r * 0.6);
+    const stopR = Math.max(14, seal.r * 0.5);
     const slowR = Math.max(stopR + 60, Math.min(BAL.diag * 0.13, 180));
 
     // Желаемая скорость по направлению к цели с плавным падением в slowR
@@ -272,7 +284,7 @@ function update(dt){
     // В «магнитной зоне» дополнительно гасим скорость, чтобы не было «вертушки»
     if (dist <= stopR) {
       // Быстрое экспоненциальное затухание
-      const damp = Math.pow(0.5, dt * 60); // ~сильный тормоз при удержании в точке
+      const damp = Math.pow(0.35, dt * 60); // ~сильный тормоз при удержании в точке
       seal.vx *= damp;
       seal.vy *= damp;
 
@@ -300,8 +312,8 @@ function update(dt){
 }
 
 function drawFrame(dt){
-  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches; // respect user pref. :contentReference[oaicite:4]{index=4}
-  const t=performance.now()/1000;
+  const reduced = PREFERS_REDUCED.matches;
+  const t = performance.now()/1000;
   drawBackground(CTX, WORLD, t, reduced);
   drawPrey(CTX);
   seal.draw(CTX);

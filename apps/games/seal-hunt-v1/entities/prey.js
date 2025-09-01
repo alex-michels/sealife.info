@@ -1,5 +1,6 @@
 // entities/prey.js
 import { BAL } from '../core/balance.js';
+import { SWEEP_T } from '../game.js';
 
 // tiny helper
 const lerp = (a,b,t)=>a+(b-a)*t;
@@ -183,6 +184,8 @@ const SPECIES = [
     wiggle:(f,dt,i)=>{ f.vx += Math.sin(f.t*2.0+i)*2*dt; f.vy += Math.cos(f.t*2.3+i)*2*dt; }
   },
 ];
+for (const sp of SPECIES) sp.hasMouth = !['star','squid','krill'].includes(sp.name);
+Object.freeze(SPECIES);
 
 export const PREY = []; // active list
 
@@ -216,11 +219,12 @@ export function updatePrey(dt, seal, world, eatCb){
 
     // sweep collision (t=0,0.5,1)
     const eatR = f.r + seal.r*0.90, eatR2 = eatR*eatR;
-    let hit=false;
-    for(const tt of [0,0.5,1]){
-      const sx = lerp(seal.px, seal.x, tt), sy=lerp(seal.py, seal.y, tt);
-      const fx = lerp(f.px, f.x, tt), fy=lerp(f.py, f.y, tt);
-      const dx=fx-sx, dy=fy-sy; if(dx*dx+dy*dy<eatR2){ hit=true; break; }
+    let hit = false;
+    for (const tt of SWEEP_T) {
+    const sx = lerp(seal.px, seal.x, tt), sy = lerp(seal.py, seal.y, tt);
+    const fx = lerp(f.px, f.x, tt),       fy = lerp(f.py, f.y, tt);
+    const dx = fx - sx, dy = fy - sy;
+    if (dx*dx + dy*dy < eatR2) { hit = true; break; }
     }
     if(hit){ PREY.splice(i,1); eatCb(); }
   }
@@ -232,7 +236,7 @@ export function drawPrey(ctx){
     ctx.save(); ctx.translate(f.x,f.y); ctx.scale(dir,1);
     f.sp.draw(ctx, f.r);
     // рот рисуем только у «рыбных» форм (не у кальмара/звезды/кроля)
-    if(!['star','squid','krill'].includes(f.sp.name)){
+    if(f.sp.hasMouth){
       ctx.strokeStyle='rgba(9,32,45,.8)'; ctx.lineWidth=1.2;
       ctx.beginPath(); ctx.moveTo(f.r*0.65, f.r*0.05);
       ctx.quadraticCurveTo(f.r*0.72, f.r*0.06, f.r*0.78, f.r*0.04); ctx.stroke();

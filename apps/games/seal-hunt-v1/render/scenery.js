@@ -4,7 +4,7 @@
 
 let bubbles = [];
 let tallKelp = [], shortKelp = [], grassTufts = [], lettuce = [], rocks = [];
-let cachedGrad = null;
+let seaGrad = null, topGrad = null, botGrad = null;
 
 function makeSeaGradient(ctx, world){
   const g = ctx.createLinearGradient(0, 0, 0, world.h);
@@ -17,7 +17,19 @@ function makeSeaGradient(ctx, world){
 }
 
 export function initScenery(world, ctx){
-  cachedGrad = makeSeaGradient(ctx, world);
+// main sea gradient (full height)
+  seaGrad = makeSeaGradient(ctx, world);
+
+  // one-time overlays (recomputed on resize only)
+  const topH = Math.min(160, world.h*0.22);
+  topGrad = ctx.createLinearGradient(0, 0, 0, topH);
+  topGrad.addColorStop(0, 'rgba(255,255,255,0.08)');
+  topGrad.addColorStop(1, 'rgba(255,255,255,0.00)');
+
+  const botY = world.h*0.68;
+  botGrad = ctx.createLinearGradient(0, botY, 0, world.h);
+  botGrad.addColorStop(0, 'rgba(0,0,0,0.00)');
+  botGrad.addColorStop(1, 'rgba(0,0,0,0.25)');
 
   // bubbles
   bubbles = Array.from({length: 28}, () => ({
@@ -76,25 +88,19 @@ export function initScenery(world, ctx){
 }
 
 export function drawBackground(ctx, world, t, reducedMotion=false){
-  // Sea gradient
-  ctx.fillStyle = cachedGrad || '#032538';
-  ctx.fillRect(0, 0, world.w, world.h);
+    // Sea gradient
+    ctx.fillStyle = seaGrad || '#032538';
+    ctx.fillRect(0, 0, world.w, world.h);
 
-  // Surface glow
-  const topH = Math.min(160, world.h*0.22);
-  const gTop = ctx.createLinearGradient(0, 0, 0, topH);
-  gTop.addColorStop(0, 'rgba(255,255,255,0.08)');
-  gTop.addColorStop(1, 'rgba(255,255,255,0.00)');
-  ctx.fillStyle = gTop;
-  ctx.fillRect(0, 0, world.w, topH);
+    // Surface glow (topGrad) — compute once in initScenery
+    const topH = Math.min(160, world.h*0.22);
+    ctx.fillStyle = topGrad || '#0000';
+    ctx.fillRect(0, 0, world.w, topH);
 
-  // Depth vignette near bottom
-  const botY = world.h*0.68;
-  const gBot = ctx.createLinearGradient(0, botY, 0, world.h);
-  gBot.addColorStop(0, 'rgba(0,0,0,0.00)');
-  gBot.addColorStop(1, 'rgba(0,0,0,0.25)');
-  ctx.fillStyle = gBot;
-  ctx.fillRect(0, botY, world.w, world.h-botY);
+    // Depth vignette (botGrad)
+    const botY = world.h*0.68;
+    ctx.fillStyle = botGrad || '#0000';
+    ctx.fillRect(0, botY, world.w, world.h - botY);
 
   // Bubbles (slow rise)
   ctx.globalAlpha = 0.15;

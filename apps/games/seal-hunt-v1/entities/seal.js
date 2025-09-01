@@ -1,6 +1,7 @@
 // entities/seal.js
 // Плавный 360° разворот по вектору движения (к касанию/мыши).
 // Крутилка ограничена turnRate (рад/с), чтобы поворот был естественным.
+const { sin, cos, hypot, min, max, PI } = Math;
 
 export function makeSeal(makeSpots) {
   return {
@@ -30,8 +31,8 @@ export function makeSeal(makeSpots) {
       this._lastT = now;
 
       // интенсивность «плавания» для анимации ласт
-      const speed = Math.hypot(this.vx, this.vy);
-      const swim = Math.min(1, speed / (this.maxSpeed * 0.5));
+      const speed = hypot(this.vx, this.vy);
+      const swim  = Math.min(1, speed / (this.maxSpeed * 0.5));
 
       // ---- рассчитать желаемый угол по вектору скорости
       // если почти стоим — удерживаем прошлый угол (без дёрганий)
@@ -46,8 +47,8 @@ export function makeSeal(makeSpots) {
       }
 
       // небольшие углы для анимации хвоста/переднего ласта
-      const tailAng = Math.sin(t * 7.0) * 0.22 * swim;
-      const flapAng = (-0.15) + Math.sin(t * 3.0) * 0.20 * swim;
+      const tailAng = sin(t * 7.0) * 0.22 * swim;
+      const flapAng = (-0.15) + sin(t * 3.0) * 0.20 * swim;
 
       // ==== РИСОВАНИЕ ====
       ctx.save();
