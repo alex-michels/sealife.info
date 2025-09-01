@@ -193,19 +193,66 @@ function update(dt){
     spawnTimer = (catchup / Math.max(0.85, Math.min(1.3, diagK)));
   }
 
-  // seal physics
-  seal.px=seal.x; seal.py=seal.y;
-  if(POINTER.active){
-    const dx=POINTER.x-seal.x, dy=POINTER.y-seal.y, dist=Math.hypot(dx,dy)||1;
-    const ax=(dx/dist)*seal.accel, ay=(dy/dist)*seal.accel;
-    seal.vx+=ax*dt; seal.vy+=ay*dt;
-    const sp=Math.hypot(seal.vx,seal.vy);
-    if(sp>seal.maxSpeed){ const k=seal.maxSpeed/sp; seal.vx*=k; seal.vy*=k; }
-    if(dx!==0) seal.facing = dx>=0 ? 1 : -1;
-  }else{ seal.vx*=0.98; seal.vy*=0.98; }
-  seal.x+=seal.vx*dt; seal.y+=seal.vy*dt;
-  seal.x=Math.max(seal.r, Math.min(WORLD.w-seal.r, seal.x));
-  seal.y=Math.max(seal.r, Math.min(WORLD.h-seal.r, seal.y));
+  // seal physics — ARRIVE: плавное замедление + демпфер, без кручения на месте
+  seal.px = seal.x; seal.py = seal.y;
+
+  if (POINTER.active) {
+    const dx = POINTER.x - seal.x;
+    const dy = POINTER.y - seal.y;
+    const dist = Math.hypot(dx, dy) || 1;
+
+    // Радиусы прибытия:
+    //  - stopR: «магнитная зона» у цели — тут полностью гасим скорость
+    //  - slowR: зона замедления — скорость уменьшается пропорционально расстоянию
+    const stopR = Math.max(14, seal.r * 0.6);
+    const slowR = Math.max(stopR + 60, Math.min(BAL.diag * 0.13, 180));
+
+    // Желаемая скорость по направлению к цели с плавным падением в slowR
+    let desiredSpeed;
+    if (dist <= stopR) {
+      desiredSpeed = 0;
+    } else if (dist < slowR) {
+      desiredSpeed = seal.maxSpeed * ((dist - stopR) / (slowR - stopR));
+    } else {
+      desiredSpeed = seal.maxSpeed;
+    }
+
+    const nx = dx / dist, ny = dy / dist;           // нормаль к цели
+    const dvx = nx * desiredSpeed - seal.vx;        // steering velocity
+    const dvy = ny * desiredSpeed - seal.vy;
+
+    // Ограничиваем изменение скорости за кадр максимальным ускорением
+    const maxDeltaV = seal.accel * dt;
+    const dLen = Math.hypot(dvx, dvy);
+    if (dLen > 1e-4) {
+      const k = Math.min(1, maxDeltaV / dLen);
+      seal.vx += dvx * k;
+      seal.vy += dvy * k;
+    }
+
+    // В «магнитной зоне» дополнительно гасим скорость, чтобы не было «вертушки»
+    if (dist <= stopR) {
+      // Быстрое экспоненциальное затухание
+      const damp = Math.pow(0.5, dt * 60); // ~сильный тормоз при удержании в точке
+      seal.vx *= damp;
+      seal.vy *= damp;
+
+      // если почти стоим — прижимаемся полностью (убирает микродрожь)
+      if (Math.hypot(seal.vx, seal.vy) < 8) {
+        seal.vx = 0; seal.vy = 0;
+      }
+    }
+  } else {
+    // Свободное затухание, когда палец/мышь отпущены
+    seal.vx *= 0.985; seal.vy *= 0.985;
+  }
+
+  // Интеграция позиции + границы
+  seal.x += seal.vx * dt;
+  seal.y += seal.vy * dt;
+  seal.x = Math.max(seal.r, Math.min(WORLD.w - seal.r, seal.x));
+  seal.y = Math.max(seal.r, Math.min(WORLD.h - seal.r, seal.y));
+
 
   // prey update + sweep collision
   updatePrey(dt, seal, WORLD, ()=>{
