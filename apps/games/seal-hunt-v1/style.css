@@ -26,3 +26,26 @@ button:focus-visible{ outline:3px solid rgba(255,255,255,.8); outline-offset:2px
   #hud{ backdrop-filter:none }
   *{ animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; }
 }
+
+/* --- disable long-press selection/callout globally --- */
+html, body {
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;      /* iOS: hide copy/lookup sheet */
+  user-select: none;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent; /* remove grey flash */
+}
+
+/* allow selection where you actually want it (inputs, if any) */
+input, textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* game surfaces / HUD */
+#game, #overlay, #hud, #ui, .hud, .overlay {
+  touch-action: none;               /* prevent OS gestures */
+  -ms-touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
