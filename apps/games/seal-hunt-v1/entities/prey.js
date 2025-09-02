@@ -1,5 +1,5 @@
 // entities/prey.js
-import { BAL } from '../core/balance.js';
+import { BAL, BASE } from '../core/balance.js';
 import { SWEEP_T } from '../game.js';
 
 // tiny helper
@@ -12,18 +12,24 @@ const WIGGLE = {
   rotFreq: 5.0,       // Hz-equivalent (multiplied by 2π inside)
   scaleAmp: 0.04,     // y-scale breathing effect
 };
-// defaults (used only if BAL.escape not set yet)
-const DEFAULT_ESCAPE = {
-  threatK: 6.0,
-  burstImpulse: 160,
-  maxBoost: 1.6,
-  fleeHold: 0.22,
-  restAfter: 1.6,
-  steer: 280,
-  dragHi: 0.985,
-  dragLo: 0.998,
+const ESCAPE = {
+  threatK: 4,       // threat radius ≈ seal.r * threatK (soft, feels right)
+  burstImpulse: 160,  // instantaneous dv (px/s) on trigger (away from seal)
+  maxBoost: 1.6,      // cap: up to 1.6× normal fish max speed during escape
+  fleeHold: 0.22,     // seconds we consider the fish "in flee mode"
+  restAfter: 1.2,     // minimum cooldown until next flee
+  steer: 260,         // while fleeing, extra away-from-seal steering (px/s^2)
+  dragHi: 0.985,      // stronger drag during/after burst (decays the boost)
+  dragLo: 0.998,      // normal gentle drag baseline (keeps speeds calm)
 };
-const ESC = () => (BAL.escape || DEFAULT_ESCAPE);
+
+// Gentle baseline swim when not threatened (keeps fish from “parking”)
+const CRUISE = {
+  targetK: 0.55, // target ≈ 55% of BAL.fishSpeedMin (auto scales with screen)
+  accel: 120,    // how quickly they regain that slow cruise (px/s^2)
+  wander: 18,    // tiny heading meander (px/s^2) so it looks alive
+};
+
 
 // -------------------------------------------------------
 // species catalog (shape/color/size/behavior)
@@ -208,7 +214,13 @@ export function spawnPrey(world, n=1){
 
 export function updatePrey(dt, seal, world, eatCb){
   const now = performance.now()/1000;
-  const E = ESC();
+  const diagK = BAL.diag / BASE.diag;
+
+  // Small-screen scaling: reduce escape potency on phones a bit
+  // diagK=0.6 → boostK≈0.85 (so ~15% softer), big screens ~1.0
+  const boostK  = (diagK < 1) ? (0.85 + 0.15 * diagK) : 1.0;
+  const steerK  = (diagK < 1) ? (0.90 + 0.10 * diagK) : 1.0;
+  const threatK = ESCAPE.threatK * (0.95 + 0.05 * diagK); // tiny scale with size
 
   for(let i=PREY.length-1;i>=0;i--){
     const f = PREY[i];
@@ -220,7 +232,7 @@ export function updatePrey(dt, seal, world, eatCb){
     // ——— distance to seal
     const dx = f.x - seal.x, dy = f.y - seal.y;
     const d2 = dx*dx + dy*dy;
-    const threatR = (seal.r * E.threatK) + f.r*1.4;
+    const threatR = (seal.r * threatK) + f.r*1.2; // slightly smaller fish padding
     const threat2 = threatR*threatR;
 
     // cooldowns
@@ -232,15 +244,15 @@ export function updatePrey(dt, seal, world, eatCb){
       const d = Math.max(1, Math.sqrt(d2));
       const nx = dx / d, ny = dy / d;         // away from seal
       // impulse (adds to current velocity)
-      f.vx += nx * E.burstImpulse;
-      f.vy += ny * E.burstImpulse;
+      f.vx += nx * (ESCAPE.burstImpulse * boostK);
+      f.vy += ny * (ESCAPE.burstImpulse * boostK);
 
       // face away immediately (so draw scale flip feels right)
       f.dir = Math.sign(f.vx) || f.dir;
 
       // timers
-      f.fleeT  = E.fleeHold;
-      f.restT  = E.restAfter;
+      f.fleeT  = ESCAPE.fleeHold;
+      f.restT  = ESCAPE.restAfter;
 
       // small tail “kick” visual for ~0.2 s
       f.tailKick = 1.0;
@@ -249,9 +261,9 @@ export function updatePrey(dt, seal, world, eatCb){
     // ——— extra steering away while fleeing (gentle)
     if (f.fleeT > 0) {
       const d = Math.max(1, Math.sqrt(d2));
-      const ax = E.steer * (dx / d);
-      const ay = E.steer * (dy / d);
-      f.vx += ax * dt;
+      const ax = (ESCAPE.steer * steerK) * (dx / d);
+      const ay = (ESCAPE.steer * steerK) * (dy / d);
+      f.vx += ax * dt; 
       f.vy += ay * dt;
     }
 
@@ -259,16 +271,62 @@ export function updatePrey(dt, seal, world, eatCb){
     f.sp.wiggle(f,dt,i);
 
     // speed control: gentle drag always; stronger during escape
-    const drag = f.fleeT > 0 ? E.dragHi : E.dragLo;
+    const drag = f.fleeT > 0 ? ESCAPE.dragHi : ESCAPE.dragLo;
     f.vx *= drag; f.vy *= drag;
 
+    // --- baseline cruise when NOT fleeing ---
+    if (f.fleeT <= 0) {
+      const sp = Math.hypot(f.vx, f.vy);
+      const target = BAL.fishSpeedMin * CRUISE.targetK;
+      const a = CRUISE.accel * dt;
+
+      if (sp < target) {
+        if (sp < 1) {
+          // if nearly still, pick a stable, seeded heading to start moving
+          const ang = f.phase * 1.7 + i * 0.9;
+          f.vx += Math.cos(ang) * a;
+          f.vy += Math.sin(ang) * a;
+        } else {
+          // accelerate along current heading to reach target cruise
+          f.vx += (f.vx / sp) * a;
+          f.vy += (f.vy / sp) * a;
+        }
+      }
+
+      // tiny wander so cruising isn’t perfectly straight
+      f.vx += Math.sin(f.phase*1.3 + i)       * CRUISE.wander * dt;
+      f.vy += Math.cos(f.phase*1.1 + i*0.57)  * CRUISE.wander * dt;
+
+      // keep facing in the travel direction (for drawing)
+      f.dir = Math.sign(f.vx) || f.dir;
+    }
+
+
     // soft cap during boost
-    const vmax = BAL.fishSpeedMax * (f.fleeT > 0 ? E.maxBoost : 1.0);
+    const vmaxBoost = 1.0 + (ESCAPE.maxBoost - 1.0) * boostK;
+    const vmax = BAL.fishSpeedMax * (f.fleeT > 0 ? vmaxBoost : 1.0);
     const sp = Math.hypot(f.vx, f.vy);
     if (sp > vmax) { const k = vmax / sp; f.vx *= k; f.vy *= k; }
 
     // integrate
     f.x += f.vx*dt; f.y += f.vy*dt;
+
+    // soft inward push near edges so prey don't stick to borders
+    {
+      const m = Math.min(48, Math.max(36, world.w * 0.05)); // margin ~5vw, clamped
+      let pushX = 0, pushY = 0;
+      if (f.x < m)          pushX = (m - f.x) / m;
+      else if (f.x > world.w - m) pushX = - (f.x - (world.w - m)) / m;
+
+      if (f.y < m)          pushY = (m - f.y) / m;
+      else if (f.y > world.h - m) pushY = - (f.y - (world.h - m)) / m;
+
+      if (pushX || pushY) {
+        const edgeSteer = 180; // gentle, not game-changing
+        f.vx += edgeSteer * pushX * dt;
+        f.vy += (edgeSteer * 0.9) * pushY * dt;
+      }
+    }
 
     // edge cull
     if(f.x<-60 || f.x>world.w+60 || f.y<-60 || f.y>world.h+60){ PREY.splice(i,1); continue; }

@@ -13,53 +13,35 @@ export const BAL = {
 
   fishSizeK: 1,
   maxPreyCap: 24,
-
-  // screen-aware prey escape tuning (filled in recomputeBalance)
-  escape: {
-    threatK: 6.0,
-    burstImpulse: 160,
-    steer: 280,
-    maxBoost: 1.6,
-    fleeHold: 0.22,
-    restAfter: 1.60,
-    dragHi: 0.985,
-    dragLo: 0.998
-  }
 };
 
 
 export function recomputeBalance(worldW, worldH) {
   BAL.diag = Math.hypot(worldW, worldH);
   BAL.area = worldW * worldH;
+  const diagK = BAL.diag / BASE.diag;
 
-  const diagK = BAL.diag / BASE.diag;                 // ~0.6 phones → 1.0 base → 1.4+ large
-  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-  const norm = clamp((diagK - 0.6) / (1.4 - 0.6), 0, 1);  // 0 at small screens, 1 at large
+  // Small-screen assist: make the seal relatively faster/snappier on phones.
+  // On tiny screens diagK≈0.6 → speed* ~1.25, accel* ~1.15 (feels fair).
+  const smallAssist = (diagK < 1) ? (1 + (1 - diagK) * 0.60) : 1;   // up to +60%
+  const smallAccel  = (diagK < 1) ? (1 + (1 - diagK) * 0.80) : 1;   // up to +80%
 
-  // Seal: keep snappy on phones (floors), scale mildly for large screens
-  BAL.sealSpeed = Math.max(240, 200 * Math.pow(diagK, 0.9));
-  BAL.sealAccel = Math.max(1000, 900 * Math.pow(diagK, 0.9));
+  // Seal: keep time-to-cross similar, plus small-screen assist
+  BAL.sealSpeed = 200 * diagK * smallAssist;
+  BAL.sealAccel = 900 * diagK * smallAccel;
 
-  // Fish speeds: softer scaling on phones, still a gentle band overall
-  const sMin = 58 * Math.pow(diagK, 0.75);
-  const sMax = 88 * Math.pow(diagK, 0.75);
-  BAL.fishSpeedMin = clamp(sMin, 55, 100);
-  BAL.fishSpeedMax = Math.max(BAL.fishSpeedMin + 22, clamp(sMax, 78, 220));
+  // Fish speeds: gentle band; slightly nerf on phones so prey don't outrun the seal
+  const phoneNerf = (diagK < 1) ? (1 - (1 - diagK) * 0.25) : 1;      // down to -25%
+  const sMin = 60 * diagK * phoneNerf, sMax = 90 * diagK * phoneNerf;
+  BAL.fishSpeedMin = Math.max(55, Math.min(95, sMin));
+  BAL.fishSpeedMax = Math.max(BAL.fishSpeedMin + 18, Math.min(180, sMax));
 
-  // Fish size: same logic as before
+  // FISH SIZE: smaller on small screens, a touch larger on huge screens
+  // diagK=0.5 → 0.875, diagK=1 → 1.0, diagK=1.5 → 1.1 (capped)
   BAL.fishSizeK = Math.max(0.75, Math.min(1.1, 0.75 + 0.25 * diagK));
 
-  // Population cap: unchanged
-  const softCap = 12 + Math.round(Math.sqrt(BAL.area) / 60);
+  // Population cap: sublinear with area → calm on 4K, not empty on phones
+  const softCap = 12 + Math.round(Math.sqrt(BAL.area) / 60); // ~15 phone, ~35–40 desktop
   BAL.maxPreyCap = Math.max(12, Math.min(40, softCap));
-
-  // —— Escape tuning scales with screen size:
-  // Small screens → easier to catch (lower threat/impulse/boost)
-  // Large screens  → full values (what you have now)
-  BAL.escape.threatK      = 4.8  + (6.2  - 4.8)  * norm;  // 4.8..6.2
-  BAL.escape.burstImpulse = 120  + (160  - 120)  * norm;  // 120..160
-  BAL.escape.steer        = 220  + (280  - 220)  * norm;  // 220..280
-  BAL.escape.maxBoost     = 1.25 + (1.60 - 1.25) * norm;  // 1.25..1.60
-  BAL.escape.fleeHold     = 0.18 + (0.22 - 0.18) * norm;  // 0.18..0.22
-  // keep restAfter/drag the same (feel is good)
 }
+

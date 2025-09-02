@@ -69,7 +69,7 @@ export function makeSeal(makeSpots) {
       ctx.ellipse(0, 0, r*1.45, r*1.10, 0, 0, Math.PI*2);
       ctx.fill();
 
-      // задние ласты (хвост)
+      // задние ласты
       ctx.save();
       ctx.rotate(tailAng);
       ctx.fillStyle = '#9bb8c4';
