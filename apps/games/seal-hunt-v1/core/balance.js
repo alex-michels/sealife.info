@@ -23,8 +23,8 @@ export function recomputeBalance(worldW, worldH) {
 
   // Small-screen assist: make the seal relatively faster/snappier on phones.
   // On tiny screens diagK≈0.6 → speed* ~1.25, accel* ~1.15 (feels fair).
-  const smallAssist = (diagK < 1) ? (1 + (1 - diagK) * 0.60) : 1;   // up to +60%
-  const smallAccel  = (diagK < 1) ? (1 + (1 - diagK) * 0.80) : 1;   // up to +80%
+  const smallAssist = (diagK < 1) ? (1 + (1 - diagK) * 0.80) : 1;   // up to +60%
+  const smallAccel  = (diagK < 1) ? (1 + (1 - diagK) * 0.90) : 1;   // up to +80%
 
   // Seal: keep time-to-cross similar, plus small-screen assist
   BAL.sealSpeed = 200 * diagK * smallAssist;
