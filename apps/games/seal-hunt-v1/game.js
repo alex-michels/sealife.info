@@ -1,6 +1,6 @@
 // game.js (ESM entrypoint)
 import { BASE, BAL, recomputeBalance } from './core/balance.js';
-import { attachPointer } from './core/input.js';
+import { attachPointer, attachKeyboard } from './core/input.js';
 import { initScenery, drawBackground } from './render/scenery.js';
 import { PREY, spawnPrey, updatePrey, drawPrey } from './entities/prey.js';
 import { makeSeal } from './entities/seal.js';
@@ -128,6 +128,9 @@ attachPointer(CANVAS,
   p=>{ POINTER.active=true; POINTER.x=p.x; POINTER.y=p.y; },
   ()=>{ POINTER.active=false; }
 );
+// Keyboard (Arrow keys + WASD), shared handler from input.js
+const KB = attachKeyboard(window);
+
 let didWarmAudio = false;
 const warmOnce = () => { if (!didWarmAudio) { didWarmAudio = true; initAudio(); } };
 CANVAS.addEventListener('touchstart', warmOnce, { passive: true });
@@ -227,11 +230,12 @@ function loop(){
 }
 
 function update(dt){
+  // ——— timer
   timeLeft -= dt*1000;
   if(timeLeft<=0){ UI.time.textContent='0'; endGame(); return; }
   UI.time.textContent = Math.ceil(timeLeft/1000);
 
-  // population control (calm)
+  // ——— spawn control (unchanged)
   spawnTimer -= dt;
   const progress = 1 - Math.max(0,timeLeft)/GAME_DURATION; // 0..1
   const targetPop = Math.min(BAL.maxPreyCap, Math.round((BAL.maxPreyCap*0.6)+progress*(BAL.maxPreyCap*0.4)));
@@ -244,21 +248,21 @@ function update(dt){
     spawnTimer = (catchup / Math.max(0.85, Math.min(1.3, diagK)));
   }
 
-  // seal physics — ARRIVE: плавное замедление + демпфер, без кручения на месте
+  // ——— seal physics
   seal.px = seal.x; seal.py = seal.y;
 
+  // 1) Pointer/touch ARRIVE steering (unchanged)
   if (POINTER.active) {
     const dx = POINTER.x - seal.x;
     const dy = POINTER.y - seal.y;
     const dist = Math.hypot(dx, dy) || 1;
 
-    // Радиусы прибытия:
-    //  - stopR: «магнитная зона» у цели — тут полностью гасим скорость
-    //  - slowR: зона замедления — скорость уменьшается пропорционально расстоянию
-    const stopR = Math.max(16, seal.r * (0.55 + Math.min(0.1, (1.0 - Math.min(1, BAL.diag / BASE.diag)) * 0.25)));
+    const stopR = Math.max(
+      16,
+      seal.r * (0.55 + Math.min(0.1, (1.0 - Math.min(1, BAL.diag / BASE.diag)) * 0.25))
+    );
     const slowR = Math.max(stopR + 60, Math.min(BAL.diag * 0.13, 180));
 
-    // Желаемая скорость по направлению к цели с плавным падением в slowR
     let desiredSpeed;
     if (dist <= stopR) {
       desiredSpeed = 0;
@@ -268,11 +272,10 @@ function update(dt){
       desiredSpeed = seal.maxSpeed;
     }
 
-    const nx = dx / dist, ny = dy / dist;           // нормаль к цели
-    const dvx = nx * desiredSpeed - seal.vx;        // steering velocity
+    const nx = dx / dist, ny = dy / dist;
+    const dvx = nx * desiredSpeed - seal.vx;
     const dvy = ny * desiredSpeed - seal.vy;
 
-    // Ограничиваем изменение скорости за кадр максимальным ускорением
     const maxDeltaV = seal.accel * dt;
     const dLen = Math.hypot(dvx, dvy);
     if (dLen > 1e-4) {
@@ -281,31 +284,50 @@ function update(dt){
       seal.vy += dvy * k;
     }
 
-    // В «магнитной зоне» дополнительно гасим скорость, чтобы не было «вертушки»
     if (dist <= stopR) {
-      // Быстрое экспоненциальное затухание
-      const damp = Math.pow(0.35, dt * 60); // ~сильный тормоз при удержании в точке
+      const damp = Math.pow(0.35, dt * 60);
       seal.vx *= damp;
       seal.vy *= damp;
-
-      // если почти стоим — прижимаемся полностью (убирает микродрожь)
-      if (Math.hypot(seal.vx, seal.vy) < 8) {
-        seal.vx = 0; seal.vy = 0;
-      }
+      if (Math.hypot(seal.vx, seal.vy) < 8) { seal.vx = 0; seal.vy = 0; }
     }
-  } else {
-    // Свободное затухание, когда палец/мышь отпущены
+  }
+
+  // 2) Keyboard thrust (Arrow/WASD). Works even if pointer is also active.
+  //    Falls back to "no input" if KB isn’t defined yet.
+  const ks = (typeof KB !== 'undefined' && KB.state) ? KB.state
+           : {left:false,right:false,up:false,down:false};
+  const kx = (ks.right ? 1 : 0) - (ks.left ? 1 : 0);
+  const ky = (ks.down  ? 1 : 0) - (ks.up   ? 1 : 0);
+
+  if (kx || ky) {
+    const len = Math.hypot(kx, ky) || 1;
+    const nx = kx / len, ny = ky / len;
+    const thrust = seal.accel * 0.70; // gentle thruster so combo isn’t too twitchy
+    seal.vx += nx * thrust * dt;
+    seal.vy += ny * thrust * dt;
+  }
+
+  // Clamp overall speed to seal.maxSpeed (applies to pointer and/or keyboard)
+  {
+    const sp = Math.hypot(seal.vx, seal.vy);
+    if (sp > seal.maxSpeed) {
+      const k = seal.maxSpeed / sp;
+      seal.vx *= k; seal.vy *= k;
+    }
+  }
+
+  // 3) Free-drift damping only when *no* inputs are active
+  if (!POINTER.active && !(kx || ky)) {
     seal.vx *= 0.985; seal.vy *= 0.985;
   }
 
-  // Интеграция позиции + границы
+  // Integrate + clamp to world
   seal.x += seal.vx * dt;
   seal.y += seal.vy * dt;
   seal.x = Math.max(seal.r, Math.min(WORLD.w - seal.r, seal.x));
   seal.y = Math.max(seal.r, Math.min(WORLD.h - seal.r, seal.y));
 
-
-  // prey update + sweep collision
+  // ——— prey update + collision
   updatePrey(dt, seal, WORLD, ()=>{
     SCORE.now++; UI.score.textContent=SCORE.now; pop();
   });

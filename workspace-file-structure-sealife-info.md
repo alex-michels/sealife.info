@@ -1,0 +1,82 @@
+Cargo.lock
+Cargo.toml
+package.json
+pnpm-lock.yaml
+pnpm-workspace.yaml
+README.md
+turbo.json
+apps/
+  games/
+    seal-hunt-v1/
+      favicon.svg
+      game.js
+      index.html
+      manifest.webmanifest
+      package.json
+      README.md
+      style.css
+      sw.js
+      core/
+      entities/
+      render/
+  web/
+    astro.config.mjs
+    package.json
+    tsconfig.json
+    public/
+      favicon.svg
+      games/
+    src/
+      env.d.ts
+      middleware.ts
+      components/
+      layouts/
+      pages/
+      wasm/
+  worker-api/
+    package.json
+    tsconfig.json
+    wrangler.toml
+    src/
+      index.ts
+infra/
+  cf/
+    README.md
+  d1/
+    schema.sql
+    migrations/
+      0001_init.sql
+packages/
+  i18n/
+    package.json
+    src/
+      en/
+      ru/
+  ui/
+    package.json
+    src/
+      index.ts
+placeholder/
+  index.html
+rust/
+  seal_domain/
+    Cargo.toml
+    src/
+      lib.rs
+  seal_wasm/
+    Cargo.toml
+    package.json
+    src/
+      lib.rs
+target/
+  CACHEDIR.TAG
+  release/
+    build/
+      ...
+    deps/
+      ...
+    examples/
+    incremental/
+  wasm32-unknown-unknown/
+    CACHEDIR.TAG
+    release/

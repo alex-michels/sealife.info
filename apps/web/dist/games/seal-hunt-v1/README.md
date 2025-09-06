@@ -1,7 +1,14 @@
 # Тюльохота — v1 (RU)
 
-Изменения:
-- Кнопка «Поделиться» отправляет текущий счёт **и рекорд** — и в тексте, и в ссылке (`?s=X&b=Y`).
-- На стартовом экране ссылка друга показывает оба значения.
-
-Деплой: загрузите `seal-hunt-v1.zip` в Cloudflare Pages (Upload assets). Кеш SW обновлён (`v1`).
+/ seal-hunt-v1
+├─ index.html
+├─ style.css
+├─ game.js
+├─ core/
+│  ├─ balance.js
+│  └─ input.js
+├─ entities/
+│  ├─ seal.js
+│  └─ prey.js
+└─ render/
+   └─ scenery.js

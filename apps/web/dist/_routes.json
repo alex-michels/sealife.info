@@ -14,7 +14,12 @@
     "/games/seal-hunt-v1/README.md",
     "/games/seal-hunt-v1/style.css",
     "/games/seal-hunt-v1/sw.js",
+    "/games/seal-hunt-v1/core/balance.js",
+    "/games/seal-hunt-v1/core/input.js",
     "/games/seal-hunt-v1/.turbo/turbo-build.log",
+    "/games/seal-hunt-v1/entities/prey.js",
+    "/games/seal-hunt-v1/entities/seal.js",
+    "/games/seal-hunt-v1/render/scenery.js",
     "/en/*",
     "/ru/*"
   ]
