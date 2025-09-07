@@ -251,7 +251,13 @@ function update(dt){
   // ——— seal physics
   seal.px = seal.x; seal.py = seal.y;
 
-  // 1) Pointer/touch ARRIVE steering (unchanged)
+  // Falls back to "no input" if KB isn’t defined yet.
+  const ks = (typeof KB !== 'undefined' && KB.state) ? KB.state
+           : {left:false,right:false,up:false,down:false};
+  const kx = (ks.right ? 1 : 0) - (ks.left ? 1 : 0);
+  const ky = (ks.down  ? 1 : 0) - (ks.up   ? 1 : 0);
+
+  // 1) Pointer/touch ARRIVE steering
   if (POINTER.active) {
     const dx = POINTER.x - seal.x;
     const dy = POINTER.y - seal.y;
@@ -285,24 +291,22 @@ function update(dt){
     }
 
     if (dist <= stopR) {
-      const damp = Math.pow(0.35, dt * 60);
-      seal.vx *= damp;
-      seal.vy *= damp;
-      if (Math.hypot(seal.vx, seal.vy) < 8) { seal.vx = 0; seal.vy = 0; }
+      // Only apply stop damping if keyboard isn’t trying to move us
+      if (!(kx || ky)) {
+        const damp = Math.exp(-dt / 0.016);
+        seal.vx *= damp;
+        seal.vy *= damp;
+        if (Math.hypot(seal.vx, seal.vy) < 8) { seal.vx = 0; seal.vy = 0; }
+      }
     }
   }
 
-  // 2) Keyboard thrust (Arrow/WASD). Works even if pointer is also active.
-  //    Falls back to "no input" if KB isn’t defined yet.
-  const ks = (typeof KB !== 'undefined' && KB.state) ? KB.state
-           : {left:false,right:false,up:false,down:false};
-  const kx = (ks.right ? 1 : 0) - (ks.left ? 1 : 0);
-  const ky = (ks.down  ? 1 : 0) - (ks.up   ? 1 : 0);
-
+  // 2) Keyboard thrust (Arrow/WASD)
   if (kx || ky) {
     const len = Math.hypot(kx, ky) || 1;
     const nx = kx / len, ny = ky / len;
-    const thrust = seal.accel * 0.70; // gentle thruster so combo isn’t too twitchy
+    const KB_THRUST = 0.70;            // keep feel as-is
+    const thrust = seal.accel * KB_THRUST;
     seal.vx += nx * thrust * dt;
     seal.vy += ny * thrust * dt;
   }
